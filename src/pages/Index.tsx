@@ -23,8 +23,11 @@ const Index = () => {
           <p className="mb-2">
             © 2025 Michaela Rutter's Music Studio. Made with 💜 for music creators everywhere.
           </p>
-          <p className="text-sm">
+          <p className="text-sm mb-2">
             Record • Create • Share • Inspire
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            Made by Ayush
           </p>
         </div>
       </footer>

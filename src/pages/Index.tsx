@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { VirtualPiano } from "@/components/VirtualPiano";
+import { ChorusEffects } from "@/components/ChorusEffects";
 import { TrackSequencer } from "@/components/TrackSequencer";
 
 const Index = () => {
@@ -12,6 +13,7 @@ const Index = () => {
       
       <main id="studio" className="container mx-auto px-4 py-12 space-y-12">
         <AudioRecorder />
+        <ChorusEffects />
         <VirtualPiano />
         <TrackSequencer />
       </main>

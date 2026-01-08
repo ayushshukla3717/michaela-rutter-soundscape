@@ -1,19 +1,67 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Music4, Volume2, Sparkles } from "lucide-react";
+import { Music4, Volume2, Sparkles, Play, Square } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import * as Tone from "tone";
 
 export const ChorusEffects = () => {
   const [chorusEnabled, setChorusEnabled] = useState(false);
   const [harmonyEnabled, setHarmonyEnabled] = useState(false);
   const [chorusDepth, setChorusDepth] = useState([50]);
-  const [chorusRate, setChorusRate] = useState([30]);
-  const [harmonyPitch, setHarmonyPitch] = useState([0]);
+  const [chorusRate, setChorusRate] = useState([4]);
+  const [harmonyPitch, setHarmonyPitch] = useState([4]);
   const [harmonyMix, setHarmonyMix] = useState([40]);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const playerRef = useRef<Tone.Player | null>(null);
+  const chorusRef = useRef<Tone.Chorus | null>(null);
+  const pitchShiftRef = useRef<Tone.PitchShift | null>(null);
+  const gainRef = useRef<Tone.Gain | null>(null);
+  const oscillatorRef = useRef<Tone.Oscillator | null>(null);
+
+  // Initialize effects
+  useEffect(() => {
+    chorusRef.current = new Tone.Chorus({
+      frequency: chorusRate[0],
+      delayTime: 3.5,
+      depth: chorusDepth[0] / 100,
+      wet: 0.5,
+    });
+
+    pitchShiftRef.current = new Tone.PitchShift({
+      pitch: harmonyPitch[0],
+      wet: harmonyMix[0] / 100,
+    });
+
+    gainRef.current = new Tone.Gain(0.5).toDestination();
+
+    return () => {
+      chorusRef.current?.dispose();
+      pitchShiftRef.current?.dispose();
+      gainRef.current?.dispose();
+      oscillatorRef.current?.dispose();
+    };
+  }, []);
+
+  // Update chorus parameters
+  useEffect(() => {
+    if (chorusRef.current) {
+      chorusRef.current.depth = chorusDepth[0] / 100;
+      chorusRef.current.frequency.value = chorusRate[0];
+    }
+  }, [chorusDepth, chorusRate]);
+
+  // Update harmony parameters
+  useEffect(() => {
+    if (pitchShiftRef.current) {
+      pitchShiftRef.current.pitch = harmonyPitch[0];
+      pitchShiftRef.current.wet.value = harmonyMix[0] / 100;
+    }
+  }, [harmonyPitch, harmonyMix]);
 
   const handleChorusToggle = (checked: boolean) => {
     setChorusEnabled(checked);
@@ -25,8 +73,52 @@ export const ChorusEffects = () => {
     toast(checked ? "Vocal harmony enabled" : "Vocal harmony disabled");
   };
 
-  const applyEffects = () => {
-    toast.success("Effects applied to your recording!");
+  // Preview the effect with a test tone
+  const previewEffect = async () => {
+    await Tone.start();
+    
+    if (isPlaying) {
+      oscillatorRef.current?.stop();
+      oscillatorRef.current?.dispose();
+      oscillatorRef.current = null;
+      setIsPlaying(false);
+      return;
+    }
+
+    oscillatorRef.current = new Tone.Oscillator({
+      frequency: 440,
+      type: "sine",
+    });
+
+    // Build effect chain
+    let chain: Tone.ToneAudioNode = oscillatorRef.current;
+
+    if (chorusEnabled && chorusRef.current) {
+      chain.connect(chorusRef.current);
+      chain = chorusRef.current;
+    }
+
+    if (harmonyEnabled && pitchShiftRef.current) {
+      chain.connect(pitchShiftRef.current);
+      chain = pitchShiftRef.current;
+    }
+
+    if (gainRef.current) {
+      chain.connect(gainRef.current);
+    }
+
+    oscillatorRef.current.start();
+    setIsPlaying(true);
+
+    // Auto-stop after 3 seconds
+    setTimeout(() => {
+      oscillatorRef.current?.stop();
+      oscillatorRef.current?.dispose();
+      oscillatorRef.current = null;
+      setIsPlaying(false);
+    }, 3000);
+
+    toast.success("Preview playing for 3 seconds...");
   };
 
   return (
@@ -37,7 +129,7 @@ export const ChorusEffects = () => {
         </div>
         <div>
           <h2 className="text-2xl font-bold">Chorus & Harmony Effects</h2>
-          <p className="text-sm text-muted-foreground">Add depth and richness to your vocals</p>
+          <p className="text-sm text-muted-foreground">Add depth and richness to your vocals (powered by Tone.js)</p>
         </div>
       </div>
 
@@ -79,14 +171,15 @@ export const ChorusEffects = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="text-sm font-medium">Rate</Label>
-                  <span className="text-xs text-muted-foreground font-mono">{chorusRate[0]}%</span>
+                  <Label className="text-sm font-medium">Rate (Hz)</Label>
+                  <span className="text-xs text-muted-foreground font-mono">{chorusRate[0]} Hz</span>
                 </div>
                 <Slider
                   value={chorusRate}
                   onValueChange={setChorusRate}
-                  max={100}
-                  step={1}
+                  min={0.1}
+                  max={10}
+                  step={0.1}
                   className="w-full"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -157,9 +250,10 @@ export const ChorusEffects = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setHarmonyPitch([3]);
-                    toast("Third harmony preset applied");
+                    setHarmonyPitch([4]);
+                    toast("Third harmony preset applied (+4 semitones)");
                   }}
+                  className={harmonyPitch[0] === 4 ? "ring-2 ring-primary" : ""}
                 >
                   Third Up
                 </Button>
@@ -167,9 +261,10 @@ export const ChorusEffects = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setHarmonyPitch([5]);
-                    toast("Fifth harmony preset applied");
+                    setHarmonyPitch([7]);
+                    toast("Fifth harmony preset applied (+7 semitones)");
                   }}
+                  className={harmonyPitch[0] === 7 ? "ring-2 ring-primary" : ""}
                 >
                   Fifth Up
                 </Button>
@@ -177,9 +272,10 @@ export const ChorusEffects = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setHarmonyPitch([7]);
-                    toast("Octave harmony preset applied");
+                    setHarmonyPitch([12]);
+                    toast("Octave harmony preset applied (+12 semitones)");
                   }}
+                  className={harmonyPitch[0] === 12 ? "ring-2 ring-primary" : ""}
                 >
                   Octave
                 </Button>
@@ -188,16 +284,25 @@ export const ChorusEffects = () => {
           )}
         </div>
 
-        {/* Apply Button */}
-        <div className="flex justify-center pt-4">
+        {/* Preview Button */}
+        <div className="flex justify-center pt-4 gap-4">
           <Button
             variant="hero"
             size="lg"
-            onClick={applyEffects}
+            onClick={previewEffect}
             disabled={!chorusEnabled && !harmonyEnabled}
           >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Apply Effects to Recording
+            {isPlaying ? (
+              <>
+                <Square className="w-5 h-5 mr-2" />
+                Stop Preview
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5 mr-2" />
+                Preview Effects
+              </>
+            )}
           </Button>
         </div>
 
@@ -206,7 +311,7 @@ export const ChorusEffects = () => {
           <p className="text-sm text-foreground/80">
             <strong className="text-primary">💡 Tip:</strong> Enable chorus for a fuller sound, 
             or add vocal harmony to create beautiful multi-voice arrangements. 
-            Experiment with different settings to find your perfect sound!
+            Click "Preview Effects" to hear a test tone with your settings!
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 import { VirtualPiano } from "@/components/VirtualPiano";
 import { ChorusEffects } from "@/components/ChorusEffects";
 import { TrackSequencer } from "@/components/TrackSequencer";
+import { DrumMachine } from "@/components/DrumMachine";
 
 const Index = () => {
   return (
@@ -15,6 +16,7 @@ const Index = () => {
         <AudioRecorder />
         <ChorusEffects />
         <VirtualPiano />
+        <DrumMachine />
         <TrackSequencer />
       </main>
 

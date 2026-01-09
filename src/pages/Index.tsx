@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { VirtualPiano } from "@/components/VirtualPiano";
+import { VirtualGuitar } from "@/components/VirtualGuitar";
 import { ChorusEffects } from "@/components/ChorusEffects";
 import { TrackSequencer } from "@/components/TrackSequencer";
 import { DrumMachine } from "@/components/DrumMachine";
@@ -16,6 +17,7 @@ const Index = () => {
         <AudioRecorder />
         <ChorusEffects />
         <VirtualPiano />
+        <VirtualGuitar />
         <DrumMachine />
         <TrackSequencer />
       </main>
